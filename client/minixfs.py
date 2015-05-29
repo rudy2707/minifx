@@ -4,6 +4,7 @@
 from bitarray import *
 from client.bloc_device import *
 from client.minix_superbloc import *
+from client.minix_inode import *
 
 class minix_file_system(object):
     def __init__(self,filename):
@@ -18,6 +19,7 @@ class minix_file_system(object):
         self.zone_map = bitarray(endian='little')
         self.zone_map.frombytes(self.imgMinixFs.read_bloc(3,self.superBlock.s_zmap_blocks))
 
+        #self.inodes_list = minix_inode(True)
         return
     
     #return the first free inode number available
