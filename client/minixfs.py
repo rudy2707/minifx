@@ -16,7 +16,7 @@ class minix_file_system(object):
 
         # bitmap blocs
         self.zone_map = bitarray(endian='little')
-        self.zone_map.frombytes(self.imgMinixFs.read_bloc(3))
+        self.zone_map.frombytes(self.imgMinixFs.read_bloc(3,self.superBlock.s_zmap_blocks))
 
         return
     
