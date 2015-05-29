@@ -1,11 +1,22 @@
 # -*- coding: utf-8 -*-
 #Note : minix-fs types are little endian
 
+from bitarray import *
 from client.bloc_device import *
+from client.minix_superbloc import *
 
 class minix_file_system(object):
     def __init__(self,filename):
-        bloc_device(65536, filename)
+        self.imgMinixFs = bloc_device(BLOCK_SIZE, filename)
+        self.superBlock = minix_superbloc(self.imgMinixFs)
+
+        # bitmap inode
+        self.inode_map = bitarray(endian='little')
+        self.inode_map.frombytes(self.imgMinixFs.read_bloc(2))
+
+        # bitmap blocs
+        self.zone_map = bitarray(endian='little')
+        self.zone_map.frombytes(self.imgMinixFs.read_bloc(3))
 
         return
     

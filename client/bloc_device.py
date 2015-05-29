@@ -5,15 +5,19 @@ from client.constantes import *
 
 class bloc_device(object):
     def __init__(self,blksize,pathname):
-        self.blksize = blksize
-        self.pathname = pathname
-        self.blocfile = os.open(self.pathname, os.O_RDWR)
+        self.blocfile = open(pathname, 'rb+')
         return
     def read_bloc(self,bloc_num,numofblk=1):
-        #os.SEEK_SET permet de parcourir le bloc depuis le debut
-        os.lseek(self.pathname, bloc_num*BLOCK_SIZE, os.SEEK_SET)
-        return os.read(self.blocfile, bloc_num)
+
+        self.blocfile.seek(bloc_num*BLOCK_SIZE)
+
+        return self.blocfile.read(numofblk*BLOCK_SIZE)
     def write_bloc(self,bloc_num,bloc):
-        #os.SEEK_SET permet de parcourir le bloc depuis le debut
-        os.lseek(self.pathname, bloc_num*BLOCK_SIZE, os.SEEK_SET)
-        return os.write(self.blocfile, bloc_num)
+        # curseur du fichier à la bonne position
+        self.blocfile.seek(BLOCK_SIZE*bloc_num)
+        # buffer avec les données à écrire
+        buff = buffer(bloc,0,BLOCK_SIZE)
+        # ecriture des block
+        for i in range(BLOCK_SIZE):
+            self.blocfile.write(buff[i])
+        return
