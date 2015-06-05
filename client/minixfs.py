@@ -41,6 +41,7 @@ class minix_file_system(object):
         while self.inode_map[i]:
             i += 1
         self.inode_map[i] = 1
+        self.inodes_list[i] = minix_inode(num=i)
         return i
 
     #toggle an inode as available for the next ialloc() 
@@ -56,6 +57,8 @@ class minix_file_system(object):
         while self.zone_map[i]:
             i += 1
         self.zone_map[i] = 1
+        blk_null = '\0' * BLOCK_SIZE
+        self.imgMinixFs.write_bloc(i+self.superBlock.s_firstdatazone, blk_null)
         return i+self.superBlock.s_firstdatazone
     
     #toggle a bloc as available for the next balloc() 
@@ -72,7 +75,7 @@ class minix_file_system(object):
             indirect_bloc = self.imgMinixFs.read_bloc(inode.i_indir_zone)
             return struct.unpack_from("<H", indirect_bloc, blk*(BLOCK_SIZE/512))[0]
         blk -= 512
-        if  blk < 512*512:
+        if blk < 512*512:
             indirect_bloc = self.imgMinixFs.read_bloc(inode.i_dbl_indr_zone)
             indirect_bloc2 = self.imgMinixFs.read_bloc(struct.unpack_from("<H", indirect_bloc, blk*(BLOCK_SIZE/(512*512)))[0])
             return struct.unpack_from("<H", indirect_bloc2, (blk % 512) * (BLOCK_SIZE/(512)))[0]
