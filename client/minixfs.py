@@ -103,6 +103,21 @@ class minix_file_system(object):
         return inode
     
     def ialloc_bloc(self,inode,blk):
+        if blk < 512:
+            if inode.i_zone[blk] == 0:
+                inode.i_zone[blk] = self.balloc()
+            return inode.i_zone[blk]
+
+        blk -= 512
+        if blk < 512*512:
+            if inode.i_zone[blk*(BLOCK_SIZE/512)] == 0:
+                inode.i_zone[blk*(BLOCK_SIZE/512)] = self.balloc()
+                return inode.i_zone[blk*(BLOCK_SIZE/512)]
+            indirect_bloc = self.imgMinixFs.read_bloc(struct.unpack("<H", inode.i_zone[blk*(BLOCK_SIZE/512)])[0])
+            if indirect_bloc[blk] == 0:
+                indirect_bloc[blk] = self.balloc()
+                self.imgMinixFs.write_bloc(struct.unpack("<H", inode.i_zone[blk*(BLOCK_SIZE/512)])[0], indirect_bloc)
+            return indirect_bloc[blk]
         return
     
     #create a new entry in the node
