@@ -13,13 +13,22 @@ class minix_file_system(object):
 
         # bitmap inode
         self.inode_map = bitarray(endian='little')
-        self.inode_map.frombytes(self.imgMinixFs.read_bloc(2))
+        self.inode_map.frombytes(self.imgMinixFs.read_bloc(2, self.superBlock.s_imap_blocks))
 
         # bitmap blocs
         self.zone_map = bitarray(endian='little')
-        self.zone_map.frombytes(self.imgMinixFs.read_bloc(3,self.superBlock.s_zmap_blocks))
+        self.zone_map.frombytes(self.imgMinixFs.read_bloc(2+self.superBlock.s_imap_blocks,self.superBlock.s_zmap_blocks))
 
-        #self.inodes_list = minix_inode(True)
+        # inodes list
+        inodes_from_img = self.imgMinixFs.read_bloc(2+self.superBlock.s_imap_blocks+self.superBlock.s_zmap_blocks, self.superBlock.s_firstdatazone)
+        self.inodes_list = []
+        self.inodes_list.append(minix_inode(None))
+        for i in range(0, self.superBlock.s_ninodes):
+            # take one inode by one and put it in inodes_list being a minix_inode object
+            # i + 1 represents the number of inode
+            self.inodes_list.append(minix_inode(inodes_from_img[i*INODE_SIZE:i*INODE_SIZE+INODE_SIZE], i+1))
+
+
         return
     
     #return the first free inode number available
