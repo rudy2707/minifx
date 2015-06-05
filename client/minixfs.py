@@ -85,7 +85,7 @@ class minix_file_system(object):
             blk = self.imgMinixFs.read_bloc(self.bmap(dinode, i))
             for j in range(0, BLOCK_SIZE/INODE_SIZE):
                 inode = blk[INODE_SIZE*j:INODE_SIZE*(j+1)]
-                if name in inode[2:14]:
+                if name in inode[2:16]:
                 #if inode[2:14] == name:
                     return struct.unpack("<H", inode[0:2])[0]
         return
@@ -95,7 +95,12 @@ class minix_file_system(object):
     #only works with absolute paths
                    
     def namei(self,path):
-        return
+        inode = MINIX_ROOT_INO
+        if path == '/':
+            return inode
+        for i in path[1:len(path)].split('/'):
+            inode = self.lookup_entry(self.inodes_list[inode], i)
+        return inode
     
     def ialloc_bloc(self,inode,blk):
         return
