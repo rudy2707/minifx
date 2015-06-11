@@ -21,7 +21,6 @@ class minix_file_system(object):
         self.zone_map.frombytes(self.disk.read_bloc(2+self.superBlock.s_imap_blocks,self.superBlock.s_zmap_blocks))
 
         # inodes list
-        # inodes_from_img = self.disk.read_bloc(2+self.superBlock.s_imap_blocks+self.superBlock.s_zmap_blocks, self.superBlock.s_firstdatazone)
         inodes_from_img = self.disk.read_bloc(self.superBlock.s_imap_blocks + self.superBlock.s_zmap_blocks + MINIX_SUPER_BLOCK_NUM + 1, self.superBlock.s_firstdatazone)
         self.inodes_list = []
         self.inodes_list.append(minix_inode(None))
@@ -89,14 +88,12 @@ class minix_file_system(object):
             for j in range(0, BLOCK_SIZE/INODE_SIZE):
                 inode = blk[INODE_SIZE*j:INODE_SIZE*(j+1)]
                 if name in inode[2:16]:
-                #if inode[2:14] == name:
                     return struct.unpack("<H", inode[0:2])[0]
         return
     
     #find an inode number according to its path
     #ex : '/usr/bin/cat'
     #only works with absolute paths
-                   
     def namei(self,path):
         inode = MINIX_ROOT_INO
         if path == '/':
@@ -129,53 +126,12 @@ class minix_file_system(object):
 
                 inode.i_size +=BLOCK_SIZE
             return indirect_bloc[blk]
-
-
-        """
-        if blk < 512:
-            if inode.i_zone[blk] == 0:
-                inode.i_zone[blk] = self.balloc()
-            return inode.i_zone[blk]
-
-        blk -= 512
-        if blk < 512*512:
-            if inode.i_zone[blk*(BLOCK_SIZE/512)] == 0:
-                inode.i_zone[blk*(BLOCK_SIZE/512)] = self.balloc()
-                return inode.i_zone[blk*(BLOCK_SIZE/512)]
-            indirect_bloc = self.disk.read_bloc(struct.unpack("<H", inode.i_zone[blk*(BLOCK_SIZE/512)])[0])
-            if indirect_bloc[blk] == 0:
-                indirect_bloc[blk] = self.balloc()
-                self.disk.write_bloc(struct.unpack("<H", inode.i_zone[blk*(BLOCK_SIZE/512)])[0], indirect_bloc)
-            return indirect_bloc[blk]
-        """
         return
     
     #create a new entry in the node
     #name is an unicode string
     #parameters : directory inode, name, inode number
     def add_entry(self,dinode,name,new_node_num):
-        """
-        for i in range(len(dinode.i_zone)):
-
-            if (dinode.i_zone[i] == 0):
-                dinode.i_zone[i] = self.balloc()
-
-            buffer = self.disk.read_bloc(dinode.i_zone[i])
-
-            # each directory
-            for j in range(0, BLOCK_SIZE / DIRSIZE):
-                numero_inode_entry = struct.unpack_from("<H", buffer, j * DIRSIZE)
-
-                # add directory
-                if (numero_inode_entry[0] == 0):
-                    # Copy block
-                    buffer_byte_array = bytearray(BLOCK_SIZE)
-                    for k in range(0, BLOCK_SIZE):
-                        buffer_byte_array[k] = buffer[k]
-
-                    struct.pack_into("<H"+str(len(name))+"s", buffer_byte_array, j*DIRSIZE, new_node_num, name)
-                    self.disk.write_bloc(dinode.i_zone[i], buffer_byte_array)
-                    """
         for i in range(0, int(round(dinode.i_size / BLOCK_SIZE, 0)) + 1):
             block = self.disk.read_bloc(self.bmap(dinode, i))
             for j in range(0, BLOCK_SIZE / DIRSIZE):
