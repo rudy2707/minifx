@@ -8,14 +8,14 @@ import random
 from struct import *
 
 
-ADR='172.20.10.3'
-PORT=2411
-HEADER_SIZE=12
-READ_MODE=0x0
-WRITE_MODE=0x1
-HANDLE=0x12345678
-RESPONSE_MAGIC=0x87878787
-REQUEST_MAGIC=0x76767676
+ADR = 'localhost'
+PORT = 2411
+HEADER_SIZE = 12
+READ_MODE = 0x0
+WRITE_MODE = 0x1
+HANDLE = 0x12345678
+RESPONSE_MAGIC = 0x87878787
+REQUEST_MAGIC = 0x76767676
 
 class bloc_device(object):
     def __init__(self,blksize,pathname):
