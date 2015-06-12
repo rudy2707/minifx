@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#Note : minix-fs types are little endian
+# Note : minix-fs types are little endian
 
 from bitarray import *
 from client.bloc_device import *
@@ -30,11 +30,11 @@ class minix_file_system(object):
             self.inodes_list.append(minix_inode(inodes_from_img[i*INODE_SIZE:(i+1)*INODE_SIZE], i+1))
         return
     
-    #return the first free inode number available
-    #starting at 0 and upto s.n_inodes-1. 
-    #The bitmap ranges from index 0 to inod_num-1
-    #Inode 0 is never and is always set.
-    #according to the inodes bitmap
+    # return the first free inode number available
+    # starting at 0 and upto s.n_inodes-1.
+    # The bitmap ranges from index 0 to inod_num-1
+    # Inode 0 is never and is always set.
+    # according to the inodes bitmap
     def ialloc(self):
         i = 0
         while self.inode_map[i]:
@@ -43,14 +43,14 @@ class minix_file_system(object):
         self.inodes_list[i] = minix_inode(num=i)
         return i
 
-    #toggle an inode as available for the next ialloc() 
+    # toggle an inode as available for the next ialloc()
     def ifree(self,inodnum):
         self.inode_map[inodnum] = 0
         return
 
-    #return the first free bloc index in the volume. The bitmap
-    #indicate the index from the bloc zone, add first_datazone then
-    #to the bloc index
+    # return the first free bloc index in the volume. The bitmap
+    # indicate the index from the bloc zone, add first_datazone then
+    # to the bloc index
     def balloc(self):
         i = 0
         while self.zone_map[i]:
@@ -60,8 +60,8 @@ class minix_file_system(object):
         self.disk.write_bloc(i+self.superBlock.s_firstdatazone, blk_null)
         return i+self.superBlock.s_firstdatazone
     
-    #toggle a bloc as available for the next balloc() 
-    #blocnum is an index in the zone_map
+    # toggle a bloc as available for the next balloc()
+    # blocnum is an index in the zone_map
     def bfree(self,blocnum):
         self.zone_map[blocnum] = 0
         return
@@ -81,7 +81,7 @@ class minix_file_system(object):
 
         return
     
-    #lookup for a name in a directory, and return its inode number, given inode directory dinode
+    # lookup for a name in a directory, and return its inode number, given inode directory dinode
     def lookup_entry(self,dinode,name):
         for i in range(0,dinode.i_size):
             blk = self.disk.read_bloc(self.bmap(dinode, i))
@@ -91,9 +91,9 @@ class minix_file_system(object):
                     return struct.unpack("<H", inode[0:2])[0]
         return
     
-    #find an inode number according to its path
-    #ex : '/usr/bin/cat'
-    #only works with absolute paths
+    # find an inode number according to its path
+    # ex : '/usr/bin/cat'
+    # only works with absolute paths
     def namei(self,path):
         inode = MINIX_ROOT_INO
         if path == '/':
@@ -128,35 +128,56 @@ class minix_file_system(object):
             return indirect_bloc[blk]
         return
     
-    #create a new entry in the node
-    #name is an unicode string
-    #parameters : directory inode, name, inode number
+    # create a new entry in the node
+    # name is an unicode string
+    # parameters : directory inode, name, inode number
     def add_entry(self,dinode,name,new_node_num):
+
+        # navigate in the inode
         for i in range(0, int(round(dinode.i_size / BLOCK_SIZE, 0)) + 1):
+
+            # load the block
             block = self.disk.read_bloc(self.bmap(dinode, i))
+
+            # navigate in the block
             for j in range(0, BLOCK_SIZE / DIRSIZE):
+
+                # looking for an empty entry
                 if (struct.unpack_from("<H", block, j * DIRSIZE)[0] == 0):
                     new_block = array('c', block)
                     struct.pack_into("<H", new_block, j*DIRSIZE, new_node_num)
                     struct.pack_into("<14s", new_block, 2 + j*DIRSIZE, name)
 
+                    # write the new directory on the disk
                     self.disk.write_bloc(self.bmap(dinode, i), new_block)
                     return
+
+        # if we don't find an empty block, we alloc a new block in the inode
         new_block = array('c', '\0' * BLOCK_SIZE)
         struct.pack_into("<H", new_block, 0, new_node_num)
         struct.pack_into("<14s", new_block, 2, name)
         self.disk.write_bloc(self.ialloc_bloc(dinode, i+1), new_block)
         return
 
-    #delete an entry named "name" 
+    # delete an entry named "name"
     def del_entry(self,inode,name):
+
+        # fill the name with \0
         name = name.ljust(14, "\0")
 
+        # navigate in the inode
         for i in range(0, int(round(inode.i_size / BLOCK_SIZE, 0)) + 1):
-            block_num = self.bmap(inode, i)
+
+            # load the block
             block = self.disk.read_bloc(self.bmap(inode, i))
+
+            # navigate in the block
             for j in range(0, BLOCK_SIZE / DIRSIZE):
-                if (struct.unpack_from("<14s", block, 2 + j *DIRSIZE)[0] == name):
+
+                # looking for the dir name in the block
+                if struct.unpack_from("<14s", block, 2 + j *DIRSIZE)[0] == name:
+
+                    # to delete the directory, we place a new block to replace the old one
                     new_block = array('c', self.disk.read_bloc(self.bmap(inode, i)))
                     struct.pack_into("<H", new_block, j*DIRSIZE, 0)
                     self.disk.write_bloc(self.bmap(inode, i), new_block)

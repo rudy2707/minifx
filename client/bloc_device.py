@@ -18,6 +18,8 @@ RESPONSE_MAGIC = 0x87878787
 REQUEST_MAGIC = 0x76767676
 
 class bloc_device(object):
+
+    """
     def __init__(self,blksize,pathname):
         self.blocfile = open(pathname, 'rb+')
 
@@ -146,13 +148,12 @@ class bloc_device(object):
             print("Bad response")
             return -1
         return
-"""
-pour tester.py en non-socket :
 
+pour tester.py en non-socket :
+"""
     def __init__(self,blksize,pathname):
         self.blocfile = open(pathname, 'rb+')
         return
-
 
     def read_bloc(self,bloc_num,numofblk=1):
 
@@ -169,4 +170,3 @@ pour tester.py en non-socket :
         for i in range(BLOCK_SIZE):
             self.blocfile.write(buff[i])
         return
-"""
